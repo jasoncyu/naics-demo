@@ -15,7 +15,7 @@ const jjCorrectionsIdx = 15
 const scoresIdxs = [7, 14]
 
 const idxToRemove = [inputDomainIdx, ...flagsIndices, industryScoreIdx, jjCorrectionsIdx, ...scoresIdxs]
-const pageSize = 10
+const pageSize = 8
 
 class App extends Component {
   constructor(props) {
@@ -31,6 +31,7 @@ class App extends Component {
   setQueryStr(queryStr) {
     this.setState({
       queryStr,
+      curPageIdx: 0,
     })
   }
 
@@ -40,11 +41,16 @@ class App extends Component {
   }
 
   renderInput() {
+    const inputStyle = {
+      paddingTop: '20px'
+    }
     return (
       <Input
         focus
         placeholder='Website'
         onChange={this.onChange.bind(this)}
+        style={inputStyle}
+        size='huge'
       />
     )
   }
@@ -72,8 +78,31 @@ class App extends Component {
     })
 
     const headerCells = headerRow.map((header, i) => {
+      const headerMapping = {
+        naics_domain: 'Website',
+        ind: 'Industry',
+        ecid: 'ECID',
+        naics_2: 'NAICS 2',
+        naics_2_desc: 'NAICS 2 Description',
+        naics_4: 'NAICS 4',
+        naics_4_desc: 'NAICS 4 Description',
+        naics_6: 'NAICS 6',
+        naics_6_desc: 'NAICS 6 Description',
+      }
+
+      const widthMapping = {
+        naics_domain: 1,
+        ind: 1,
+        ecid: 1,
+        naics_2: 1,
+        naics_2_desc: 1,
+        naics_4: 1,
+        naics_4_desc: 1,
+        naics_6: 1,
+        naics_6_desc: 1,
+      }
       return (
-        <Table.HeaderCell key={i.toString()}>{header}</Table.HeaderCell>
+        <Table.HeaderCell width={widthMapping[header]} key={i.toString()}>{headerMapping[header]}</Table.HeaderCell>
       )
     })
 
@@ -85,7 +114,7 @@ class App extends Component {
       </Table.Header>
     )
 
-    const bodyRows = dataRows
+    const filteredDataRows = dataRows
           .filter((row) => {
             const domainCell = row[0]
             if (domainCell.toLowerCase().includes(this.state.queryStr.toLowerCase())) {
@@ -94,7 +123,9 @@ class App extends Component {
 
             return false
             // return true
-          }).slice(this.state.curPageIdx * pageSize, (this.state.curPageIdx + 1) * pageSize).map((dataRow, j) => {
+          })
+
+    const bodyRows = filteredDataRows.slice(this.state.curPageIdx * pageSize, (this.state.curPageIdx + 1) * pageSize).map((dataRow, j) => {
             // let css = {}
             // if (!dataRow[0].toLowerCase().includes(this.state.queryStr.toLowerCase())) {
             //   css = {
@@ -125,7 +156,8 @@ class App extends Component {
       </Table.Body>
     )
 
-    const numPages = Math.floor(dataRows.length / pageSize)
+    console.log("filteredDataRows.length: ", filteredDataRows.length)
+    const numPages = Math.floor(filteredDataRows.length / pageSize)
     _.range(numPages).map((pageIdx) => {
       return (
         <Menu.Item as='a'>(pageIdx + 1)</Menu.Item>
@@ -144,13 +176,13 @@ class App extends Component {
       })
     }
 
-    const atFirstPage = this.state.curPageIdx == 0
+    const atFirstPage = this.state.curPageIdx <= 0
     let leftChevronStyle = {}
     if (atFirstPage) {
       leftChevronStyle['display'] = 'none'
     }
 
-    const atLastPage = this.state.curPageIdx == numPages - 1
+    const atLastPage = this.state.curPageIdx >= numPages - 1
     let rightChevronStyle = {}
     if (atLastPage) {
       rightChevronStyle['display'] = 'none'
@@ -174,7 +206,10 @@ class App extends Component {
     )
 
     return (
-      <Table celled>
+      <Table
+        celled
+        size="large"
+      >
         {header}
         {body}
         {footer}
